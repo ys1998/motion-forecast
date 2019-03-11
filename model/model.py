@@ -108,7 +108,7 @@ class Model(BaseModel):
             epsilon = torch.randn(qz0_mean.size()).to(x.device)
             z0.append(epsilon * torch.exp(.5 * qz0_logvar) + qz0_mean)
         concat_z0 = torch.cat(z0, dim=1)
-        pred_z = odeint(self.func, concat_z0, torch.arange(x.size(1)).float().to(x.device), atol=1e-5, rtol=1e-3)
+        pred_z = odeint(self.func, concat_z0, torch.arange(x.size(1)).float().to(x.device), atol=1e-7, rtol=1e-5)
         pred_z_splits = torch.chunk(pred_z, self.k+1, dim=2)
         pred_x_splits = [self.decoders[i](pred_z_splits[i]) for i in range(self.k+1)]
         pred_x = sum(pred_x_splits)
