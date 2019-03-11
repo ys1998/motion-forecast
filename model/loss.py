@@ -30,8 +30,8 @@ def latent_ode_loss(output, target):
     # for mean, logvar in zip(means, logvars):
     #     kl_loss += normal_kl(mean, logvar, normal_mean, normal_logvar)
     k = len(means)
-    prior_z0_mean = torch.zeros(means[0].size())
-    prior_z0_logvar = torch.log(torch.ones(logvars[0].size())/k)
+    prior_z0_mean = torch.zeros(means[0].size()).to(output.device)
+    prior_z0_logvar = torch.log(torch.ones(logvars[0].size())/k).to(output.device)
     reciprocal_sum = sum([1./(1e-9 + torch.exp(lv)) for lv in logvars]) + 1e-9 # for stability, add epsilon
     posterior_z0_mean = sum([mu/torch.exp(lv) for mu,lv in zip(means, logvars)])/reciprocal_sum
     posterior_z0_logvar = torch.log(1./reciprocal_sum)
