@@ -8,9 +8,11 @@ import torch.nn.functional as F
 def log_normal_pdf(x, mean, logvar):
     const = torch.from_numpy(np.array([2. * np.pi])).float().to(x.device)
     const = torch.log(const)
-    var = torch.exp(logvar) + 1e-9
-    val = torch.sum(-.5 * (const*var + logvar*var + (x - mean) ** 2) / var, dim=[1,2])
-    assert bool((val<=0.0).all()), "Invalid log-likelihood value " + str(val) 
+    variance = torch.exp(logvar) + 1e-9 # add epsilon to prevent underflow
+    val = torch.sum(-.5 * (const + logvar + ((x - mean) ** 2) / variance), dim=[1,2]) 
+    # log-likelihood can theoretically take any real value for variable stddev
+    # so, the assert statement below is incorrect !
+    # assert bool((val<=0.0).all()), "Invalid log-likelihood value " + str(val)
     return val.mean()
 
 
