@@ -26,7 +26,7 @@
     "optimizer": {
         "type": "SGD",
         "args":{
-            "lr": 0.001,
+            "lr": 0.01,
             "weight_decay": 0,
             "nesterov": true,
             "momentum": 0.9

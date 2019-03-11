@@ -8,7 +8,6 @@ import torch.nn.functional as F
 def log_normal_pdf(x, mean, logvar):
     const = torch.from_numpy(np.array([2. * np.pi])).float().to(x.device)
     const = torch.log(const)
-    print(torch.max(x).item(), torch.max(mean).item())
     return -.5 * (const + logvar + (x - mean) ** 2. / torch.exp(logvar))
 
 
@@ -22,10 +21,10 @@ def normal_kl(mu1, lv1, mu2, lv2):
 
 def latent_ode_loss(output, target, std=0.01):
     means, logvars, pred = output['mean'], output['logvar'], output['pred_x']
-    logpx = torch.sum(log_normal_pdf(target, pred, 2*torch.log(torch.Tensor([std]))))
+    input_size = target.size(2)
+    logpx = torch.sum(log_normal_pdf(target, pred[..., :input_size], pred[..., input_size:]))
     kl_loss = 0.0
-    normal_mean = torch.zeros(means[0].shape)
-    normal_logvar = torch.zeros(logvars[0].shape)
+    normal_mean = normal_logvar = torch.zeros(means[0].shape)
     for mean, logvar in zip(means, logvars):
         kl_loss += torch.sum(
             normal_kl(mean, logvar, normal_mean, normal_logvar))

@@ -28,9 +28,9 @@ class LatentODEFunc(nn.Module):
         self.layers = nn.ModuleList([
             nn.Sequential(
                 nn.Linear(input_size, hidden_size),
-                nn.ELU(),
+                nn.ELU(inplace=True),
                 nn.Linear(hidden_size, hidden_size),
-                nn.ELU(),
+                nn.ELU(inplace=True),
                 nn.Linear(hidden_size, input_size)
             )
         for _ in range(k)])
@@ -65,11 +65,11 @@ class EncoderRNN(nn.Module):
         return torch.zeros(batch_size, self.hidden_size)
 
 class Decoder(nn.Module):
-    def __init__(self, latent_size, input_size, hidden_size):
+    def __init__(self, latent_size, output_size, hidden_size):
         super(Decoder, self).__init__()
         self.relu = nn.ReLU(inplace=True)
         self.fc1 = nn.Linear(latent_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, input_size)
+        self.fc2 = nn.Linear(hidden_size, output_size)
 
     def forward(self, z):
         out = self.fc1(z)
@@ -82,9 +82,10 @@ class Model(BaseModel):
         super(Model, self).__init__()
         self.encoders = nn.ModuleList([
             EncoderRNN(latent_size, input_size, hidden_size)
+            # nn.GRU()
         for _ in range(k+1)])
         self.decoders = nn.ModuleList([
-            Decoder(latent_size, input_size, hidden_size)
+            Decoder(latent_size, 2*input_size, hidden_size)
         for _ in range(k+1)])
         self.func = LatentODEFunc(k+1, input_size, hidden_size)
         self.k = k
@@ -108,7 +109,7 @@ class Model(BaseModel):
             epsilon = torch.randn(qz0_mean.size()).to(x.device)
             z0.append(epsilon * torch.exp(.5 * qz0_logvar) + qz0_mean)
         concat_z0 = torch.cat(z0, dim=1)
-        pred_z = odeint(self.func, concat_z0, torch.arange(x.size(1)).float().to(x.device), atol=1e-7, rtol=1e-5)
+        pred_z = odeint(self.func, concat_z0, torch.arange(x.size(1)).float().to(x.device)/100, atol=1e-7, rtol=1e-5)
         pred_z_splits = torch.chunk(pred_z, self.k+1, dim=2)
         pred_x_splits = [self.decoders[i](pred_z_splits[i]) for i in range(self.k+1)]
         pred_x = sum(pred_x_splits)
