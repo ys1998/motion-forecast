@@ -8,7 +8,8 @@
             "k" : 3, 
             "input_size" : 96,
             "hidden_size" : 128, 
-            "latent_size" : 96
+            "latent_size" : 96,
+            "scale" : 100
         }
     },
     "data_loader": {

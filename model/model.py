@@ -78,7 +78,7 @@ class Decoder(nn.Module):
         return out
 
 class Model(BaseModel):
-    def __init__(self, k, input_size, hidden_size, latent_size):
+    def __init__(self, k, input_size, hidden_size, latent_size, scale):
         super(Model, self).__init__()
         self.encoders = nn.ModuleList([
             EncoderRNN(latent_size, input_size, hidden_size)
@@ -90,6 +90,7 @@ class Model(BaseModel):
         self.func = LatentODEFunc(k+1, input_size, hidden_size)
         self.k = k
         self.latent_size = latent_size
+        self.scale = scale
 
     def forward(self, x, states):
         # x : (batch, time, (k+1)*input_size)
@@ -109,14 +110,20 @@ class Model(BaseModel):
             epsilon = torch.randn(qz0_mean.size()).to(x.device)
             z0.append(epsilon * torch.exp(.5 * qz0_logvar) + qz0_mean)
         concat_z0 = torch.cat(z0, dim=1)
-        pred_z = odeint(self.func, concat_z0, torch.arange(x.size(1)).float().to(x.device)/100, atol=1e-7, rtol=1e-5)
+        pred_z = odeint(self.func, concat_z0, torch.arange(x.size(1)).float().to(x.device)/self.scale, atol=1e-7, rtol=1e-5)
         pred_z_splits = torch.chunk(pred_z, self.k+1, dim=2)
-        pred_x_splits = [self.decoders[i](pred_z_splits[i]) for i in range(self.k+1)]
-        pred_x = sum(pred_x_splits)
+        pred_x_splits = [self.decoders[i](pred_z_splits[i]).permute(1,0,2) for i in range(self.k+1)] # convert to (batch, time, :)
+        
+        # compute mean and logvar of distribution of sequence, which is modelled by the random variable
+        # equal to the sum of random variables modelling each motion band
+        input_size = pred_x_splits[0].size(2) // 2
+        pred_mean = sum([x[..., :input_size] for x in pred_x_splits])
+        pred_logvar = torch.log(sum([torch.exp(x[..., input_size:]) for x in pred_x_splits]))
         output = {
-            'mean' : mean,
-            'logvar': logvar,
-            'pred_x' : pred_x.permute(1,0,2) # convert to (batch, time, :)
+            'z0_means' : mean,
+            'z0_logvars': logvar,
+            'pred_mean' : pred_mean,
+            'pred_logvar' : pred_logvar
         }
         return output
 
