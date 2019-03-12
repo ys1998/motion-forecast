@@ -1,5 +1,6 @@
 import importlib
 import matplotlib.pyplot as plt
+import numpy as np
 
 class WriterTensorboardX():
     def __init__(self, writer_dir, logger, enable):
@@ -44,10 +45,9 @@ class WriterTensorboardX():
 
         
 def make_figure(data):
-    # data -> (seq_len, :, :)
+    # data -> (seq_len, :)
     figure, ax = plt.subplots(data.shape[1],1, sharex=True)
     x = np.arange(0, data.shape[0])
     for i in range(data.shape[1]):
-        for j in range(data.shape[2]):
-            ax[i].plot(x, data[:,i,j])
+        ax[i].plot(x, data[:,i])
     return figure

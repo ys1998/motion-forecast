@@ -76,14 +76,15 @@ class Trainer(BaseTrainer):
                     loss.item()))
                 # prepare figures for display
                 gt = target.cpu().numpy() # (batch, time, :)
-                gt = gt[0].reshape(gt.shape[1], -1, 32, 3)
-                gt = gt[:,:,0,:]
+                gt = gt[0].reshape(gt.shape[1], 32, 3)
+                gt = gt[:,0,:]
                 self.writer.add_figure('ground_truth/'+str(epoch)+'/'+str(batch_idx), make_figure(gt))
                 
-                mu, logvar = output['pred_mean'][0].cpu().numpy(), output['pred_logvar'][0].cpu().numpy()
-                mu, logvar = mu.reshape(mu.shape[0], -1, 32, 3), logvar.reshape(logvar.reshape[0], -1, 32, 3)
-                mu, logvar = mu[:,:,0,:], logvar[:,:,0,:]
-                epsilon = np.random.randn(mu.shape)
+                mu = output['pred_mean'][0].detach().cpu().numpy()
+                logvar = output['pred_logvar'][0].detach().cpu().numpy()
+                mu, logvar = mu.reshape(mu.shape[0], 32, 3), logvar.reshape(logvar.shape[0], 32, 3)
+                mu, logvar = mu[:,0,:], logvar[:,0,:]
+                epsilon = np.random.randn(*mu.shape)
                 x = np.exp(logvar/2.)*epsilon + mu
                 self.writer.add_figure('prediction/'+str(epoch)+'/'+str(batch_idx), make_figure(x))
 
