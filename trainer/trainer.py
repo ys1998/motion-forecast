@@ -80,13 +80,20 @@ class Trainer(BaseTrainer):
                 gt = gt[:,0,:]
                 self.writer.add_figure('ground_truth/'+str(epoch)+'/'+str(batch_idx), make_figure(gt))
                 
+                # pick the mean as the predicted value, since it is most probable at any time
+                # step and predictions at all time steps are independent given the latent variable(s)
                 mu = output['pred_mean'][0].detach().cpu().numpy()
-                logvar = output['pred_logvar'][0].detach().cpu().numpy()
-                mu, logvar = mu.reshape(mu.shape[0], 32, 3), logvar.reshape(logvar.shape[0], 32, 3)
-                mu, logvar = mu[:,0,:], logvar[:,0,:]
-                epsilon = np.random.randn(*mu.shape)
-                x = np.exp(logvar/2.)*epsilon + mu
-                self.writer.add_figure('prediction/'+str(epoch)+'/'+str(batch_idx), make_figure(x))
+                mu = mu.reshape(mu.shape[0], 32, 3)
+                mu = mu[:,0,:]
+
+                # logvar = output['pred_logvar'][0].detach().cpu().numpy()
+                # logvar = logvar.reshape(logvar.shape[0], 32, 3)
+                # logvar = logvar[:,0,:]
+
+                # epsilon = np.random.randn(*mu.shape)
+                # x = np.exp(logvar/2.)*epsilon + mu
+                
+                self.writer.add_figure('prediction/'+str(epoch)+'/'+str(batch_idx), make_figure(mu))
 
         log = {
             'loss': total_loss / len(self.data_loader),

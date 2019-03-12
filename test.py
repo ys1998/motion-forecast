@@ -7,13 +7,14 @@ import model.loss as module_loss
 import model.metric as module_metric
 import model.model as module_arch
 from train import get_instance
+from utils import make_figure
 
 
 def main(config, resume):
     # setup data_loader instances
     data_loader = getattr(module_data, config['data_loader']['type'])(
-        config['data_loader']['args']['data_dir'],
-        batch_size=512,
+        config['data_loader']['args']['file'],
+        config['data_loader']['args']['batch_size'],
         shuffle=False,
         validation_split=0.0,
         training=False,
@@ -43,13 +44,34 @@ def main(config, resume):
     total_loss = 0.0
     total_metrics = torch.zeros(len(metric_fns))
 
+    # directory for saving images
+    save_dir = os.path.split(resume)[0]
+    save_dir = os.path.join(save_dir, 'test')
+
     with torch.no_grad():
         for i, (data, target) in enumerate(tqdm(data_loader)):
-            data, target = data.to(device), target.to(device)
-            output = model(data)
-            #
-            # save sample images, or do something with output here
-            #
+            data, target = data.float().to(device), target.float().to(device)
+
+            states = model.init_hidden(data.size(0))
+            output = model(data, states)
+           
+             # prepare figures for display
+            gt = target.cpu().numpy() # (batch, time, :)
+            mu = output['pred_mean'][0].detach().cpu().numpy()
+
+            for b in range(gt.shape[0]):
+                gt_ = gt[b].reshape(gt.shape[1], 32, 3)
+                mu_ = mu.reshape(mu.shape[0], 32, 3)
+                for j in range(32):
+                    img_prefix = os.path.join(save_dir, 'idx_'+str(i*gt.shape[0]+b)+'_jt_'+str(j))
+                    gt__ = gt_[:,j,:]
+                    mu__ = mu_[:,j,:]
+                    fig = make_figure(gt__)
+                    fig.savefig(img_prefix + '_gt.png')
+                    fig.close()
+                    fig = make_figure(mu__)
+                    fig.savefig(img_prefix + '_pred.png')
+                    fig.close()
             
             # computing loss, metrics on test set
             loss = loss_fn(output, target)
