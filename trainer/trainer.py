@@ -1,7 +1,8 @@
 import numpy as np
 import torch
-from torchvision.utils import make_grid
+# from torchvision.utils import make_grid
 from base import BaseTrainer
+from utils import make_figure
 
 
 class Trainer(BaseTrainer):
@@ -73,7 +74,18 @@ class Trainer(BaseTrainer):
                     self.data_loader.n_samples,
                     100.0 * batch_idx / len(self.data_loader),
                     loss.item()))
-                # self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
+                # prepare figures for display
+                gt = target.cpu().numpy() # (batch, time, :)
+                gt = gt[0].reshape(gt.shape[1], -1, 32, 3)
+                gt = gt[:,:,0,:]
+                self.writer.add_figure('ground_truth/'+str(epoch)+'/'+str(batch_idx), make_figure(gt))
+                
+                mu, logvar = output['pred_mean'][0].cpu().numpy(), output['pred_logvar'][0].cpu().numpy()
+                mu, logvar = mu.reshape(mu.shape[0], -1, 32, 3), logvar.reshape(logvar.reshape[0], -1, 32, 3)
+                mu, logvar = mu[:,:,0,:], logvar[:,:,0,:]
+                epsilon = np.random.randn(mu.shape)
+                x = np.exp(logvar/2.)*epsilon + mu
+                self.writer.add_figure('prediction/'+str(epoch)+'/'+str(batch_idx), make_figure(x))
 
         log = {
             'loss': total_loss / len(self.data_loader),

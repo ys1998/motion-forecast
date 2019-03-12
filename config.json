@@ -20,7 +20,7 @@
             "max_seq_len": 512,
             "num_bands": 3,
             "shuffle": true,
-            "validation_split": 0.1,
+            "validation_split": 0.2,
             "num_workers": 2
         }
     },
@@ -51,7 +51,7 @@
         "verbosity": 2,
         
         "monitor": "min val_loss",
-        "early_stop": 10,
+        "early_stop": 20,
         
         "tensorboardX": true,
         "log_dir": "saved/runs"
