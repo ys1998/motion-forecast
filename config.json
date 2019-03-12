@@ -7,8 +7,8 @@
         "args": {
             "k" : 3, 
             "input_size" : 96,
-            "hidden_size" : 128, 
-            "latent_size" : 96,
+            "hidden_size" : 256, 
+            "latent_size" : 128,
             "scale" : 100
         }
     },
@@ -45,9 +45,9 @@
         }
     },
     "trainer": {
-        "epochs": 100,
+        "epochs": 5000,
         "save_dir": "saved/",
-        "save_period": 1,
+        "save_period": 50,
         "verbosity": 2,
         
         "monitor": "min val_loss",
