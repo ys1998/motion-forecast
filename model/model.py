@@ -31,6 +31,8 @@ class LatentODEFunc(nn.Module):
                 nn.ELU(inplace=True),
                 nn.Linear(hidden_size, hidden_size),
                 nn.ELU(inplace=True),
+				nn.Linear(hidden_size, hidden_size),
+                nn.ELU(inplace=True),
                 nn.Linear(hidden_size, input_size)
             )
         for _ in range(k)])
@@ -67,27 +69,37 @@ class EncoderRNN(nn.Module):
 class Decoder(nn.Module):
     def __init__(self, latent_size, output_size, hidden_size):
         super(Decoder, self).__init__()
-        self.relu = nn.ReLU(inplace=True)
-        self.fc1 = nn.Linear(latent_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
+		self.layers = nn.Sequential(
+			nn.Linear(latent_size, hidden_size)
+			nn.ELU(inplace=True)
+			nn.Linear(hidden_size, hidden_size)
+			nn.ELU(inplace=True)
+			nn.Linear(hidden_size, hidden_size)
+			nn.ELU(inplace=True)
+			nn.Linear(hidden_size, output_size)
+		)
 
     def forward(self, z):
-        out = self.fc1(z)
-        out = self.relu(out)
-        out = self.fc2(out)
-        return out
+        return self.layers(z)
 
 class Model(BaseModel):
     def __init__(self, k, input_size, hidden_size, latent_size, scale):
         super(Model, self).__init__()
-        self.encoders = nn.ModuleList([
-            EncoderRNN(latent_size, input_size, hidden_size)
-            # nn.GRU()
-        for _ in range(k+1)])
+        # self.encoders = nn.ModuleList([
+        #     EncoderRNN(latent_size, input_size, hidden_size)
+        # for _ in range(k+1)])
+		self.encoders = nn.ModuleList([
+			nn.GRU(input_size, hidden_size, 4)
+		for _ in range(k+1)])
+		self.projections = nn.ModuleList([
+			nn.Linear()
+		])
+		
+		
         self.decoders = nn.ModuleList([
             Decoder(latent_size, 2*input_size, hidden_size)
         for _ in range(k+1)])
-        self.func = LatentODEFunc(k+1, input_size, hidden_size)
+        self.func = LatentODEFunc(k+1, latent_size, hidden_size)
         self.k = k
         self.latent_size = latent_size
         self.scale = scale

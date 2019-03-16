@@ -50,7 +50,7 @@ class Trainer(BaseTrainer):
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
         for batch_idx, (data, target) in enumerate(self.data_loader):
-            data, target = data.float().to(self.device), target.float().to(self.device) ##
+            data, target = data.to(self.device), target.to(self.device) ##
             # new hidden state for each batch
             # data is in (batch, time, :) format
             states = self.model.init_hidden(data.size(0))
@@ -123,7 +123,7 @@ class Trainer(BaseTrainer):
         total_val_metrics = np.zeros(len(self.metrics))
         with torch.no_grad():
             for batch_idx, (data, target) in enumerate(self.valid_data_loader):
-                data, target = data.float().to(self.device), target.float().to(self.device)
+                data, target = data.to(self.device), target.to(self.device)
                 states = self.model.init_hidden(data.size(0))
                 output = self.model(data, states)
                 loss = self.loss(output, target)

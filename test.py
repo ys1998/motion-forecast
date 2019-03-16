@@ -10,6 +10,7 @@ from train import get_instance
 from utils import make_figure, ensure_dir
 import matplotlib.pyplot as plt
 
+torch.set_default_dtype(torch.float64)
 
 def main(config, resume):
     # setup data_loader instances
@@ -53,7 +54,7 @@ def main(config, resume):
 
     with torch.no_grad():
         for i, (data, target) in enumerate(tqdm(data_loader)):
-            data, target = data.float().to(device), target.float().to(device)
+            data, target = data.to(device), target.to(device)
 
             states = model.init_hidden(data.size(0))
             output = model(data, states)

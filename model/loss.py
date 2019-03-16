@@ -6,7 +6,7 @@ import torch.nn.functional as F
 #     return F.nll_loss(output, target)
 
 def log_normal_pdf(x, mean, logvar):
-    const = torch.from_numpy(np.array([2. * np.pi])).float().to(x.device)
+    const = torch.from_numpy(np.array([2. * np.pi])).to(x.device)
     const = torch.log(const)
     variance = torch.exp(logvar) + 1e-9 # add epsilon to prevent underflow
     val = torch.sum(-.5 * (const + logvar + ((x - mean) ** 2) / variance), dim=[1,2]) 
@@ -36,7 +36,7 @@ def latent_ode_loss(output, target):
     prior_z0_mean = torch.zeros(means[0].size()).to(means[0].device)
     prior_z0_logvar = torch.log(torch.ones(logvars[0].size())/k).to(means[0].device)
     reciprocal_sum = sum([1./(1e-9 + torch.exp(lv)) for lv in logvars]) + 1e-9 # for stability, add epsilon
-    posterior_z0_mean = sum([mu/torch.exp(lv) for mu,lv in zip(means, logvars)])/reciprocal_sum
+    posterior_z0_mean = sum([mu/(1e-9+torch.exp(lv)) for mu,lv in zip(means, logvars)])/reciprocal_sum
     posterior_z0_logvar = torch.log(1./reciprocal_sum)
     kl_loss = normal_kl(posterior_z0_mean, posterior_z0_logvar, prior_z0_mean, prior_z0_logvar)
 
