@@ -43,3 +43,16 @@ def latent_ode_loss(output, target):
     pred_mean, pred_logvar = output['pred_mean'], output['pred_logvar']
     logpx = log_normal_pdf(target, pred_mean, pred_logvar)
     return kl_loss - logpx
+
+def latent_ode_loss_split(output, target):
+    means, logvars = output['z0_means'], output['z0_logvars']
+    kl_loss = 0.0
+    normal_mean = normal_logvar = torch.zeros(means[0].shape)
+    for mean, logvar in zip(means, logvars):
+        kl_loss += normal_kl(mean, logvar, normal_mean, normal_logvar)
+
+    pred_means, pred_logvars = output['pred_means'], output['pred_logvars']
+    logpx = 0.0
+    for i, (mean, logvar) in enumerate(zip(pred_means, pred_logvars)):
+        logpx += log_normal_pdf(target[:,:,i,:], mean, logvar)
+    return kl_loss - logpx

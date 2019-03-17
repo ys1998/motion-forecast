@@ -60,4 +60,5 @@ class Human36Dataset(Dataset):
     def __getitem__(self, idx):
         x = self.data[idx]
         smoothed, org = x[:,:-1,:,:], x[:,-1,:,:]
-        return smoothed.reshape(smoothed.shape[0], -1), org.reshape(org.shape[0], -1)
+        # return smoothed.reshape(smoothed.shape[0], -1), org.reshape(org.shape[0], -1)
+        return smoothed.reshape(smoothed.shape[0], -1), smoothed.reshape(*smoothed.shape[0:2], -1)

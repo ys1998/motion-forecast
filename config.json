@@ -7,8 +7,8 @@
         "args": {
             "k" : 3, 
             "input_size" : 96,
-            "hidden_size" : 1024, 
-            "latent_size" : 512,
+            "hidden_size" : 512, 
+            "latent_size" : 256,
             "scale" : 100
         }
     },
@@ -33,7 +33,7 @@
             "momentum": 0.9
         }
     },
-    "loss": "latent_ode_loss",
+    "loss": "latent_ode_loss_split",
     "metrics": [
         "my_metric"
     ],
@@ -51,7 +51,7 @@
         "verbosity": 2,
         
         "monitor": "off",
-        "early_stop": 20,
+        "early_stop": 5000,
         
         "tensorboardX": true,
         "log_dir": "saved/runs"
