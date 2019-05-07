@@ -56,7 +56,7 @@ class Trainer(BaseTrainer):
             states = self.model.init_hidden(data.size(0))
             self.optimizer.zero_grad()
             output = self.model(data, states)
-            loss = self.loss(output, target)
+            loss = self.loss(output, data.view(data.size(0), data.size(1), -1, 96))
             loss.backward()
             
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=10.0)
@@ -74,26 +74,27 @@ class Trainer(BaseTrainer):
                     self.data_loader.n_samples,
                     100.0 * batch_idx / len(self.data_loader),
                     loss.item()))
-                # prepare figures for display
-                gt = target.cpu().numpy() # (batch, time, :)
-                gt = gt[0].reshape(gt.shape[1], 32, 3)
-                gt = gt[:,0,:]
-                self.writer.add_figure('ground_truth/'+str(epoch)+'/'+str(batch_idx), make_figure(gt))
-                
-                # pick the mean as the predicted value, since it is most probable at any time
-                # step and predictions at all time steps are independent given the latent variable(s)
-                mu = output['pred_mean'][0].detach().cpu().numpy()
-                mu = mu.reshape(mu.shape[0], 32, 3)
-                mu = mu[:,0,:]
+                if batch_idx == 0:
+                    # prepare figures for display
+                    gt = target.cpu().numpy() # (batch, time, :)
+                    gt = gt[0].reshape(gt.shape[1], 32, 3)
+                    gt = gt[:,0,:]
+                    self.writer.add_figure('ground_truth/'+str(epoch)+'/'+str(batch_idx), make_figure(gt))
 
-                # logvar = output['pred_logvar'][0].detach().cpu().numpy()
-                # logvar = logvar.reshape(logvar.shape[0], 32, 3)
-                # logvar = logvar[:,0,:]
+                    # pick the mean as the predicted value, since it is most probable at any time
+                    # step and predictions at all time steps are independent given the latent variable(s)
+                    mu = sum(output['pred_means'])[0].detach().cpu().numpy()
+                    mu = mu.reshape(mu.shape[0], 32, 3)
+                    mu = mu[:,0,:]
 
-                # epsilon = np.random.randn(*mu.shape)
-                # x = np.exp(logvar/2.)*epsilon + mu
-                
-                self.writer.add_figure('prediction/'+str(epoch)+'/'+str(batch_idx), make_figure(mu))
+                    # logvar = output['pred_logvar'][0].detach().cpu().numpy()
+                    # logvar = logvar.reshape(logvar.shape[0], 32, 3)
+                    # logvar = logvar[:,0,:]
+
+                    # epsilon = np.random.randn(*mu.shape)
+                    # x = np.exp(logvar/2.)*epsilon + mu
+
+                    self.writer.add_figure('prediction/'+str(epoch)+'/'+str(batch_idx), make_figure(mu))
 
         log = {
             'loss': total_loss / len(self.data_loader),
@@ -126,7 +127,7 @@ class Trainer(BaseTrainer):
                 data, target = data.to(self.device), target.to(self.device)
                 states = self.model.init_hidden(data.size(0))
                 output = self.model(data, states)
-                loss = self.loss(output, target)
+                loss = self.loss(output, data.view(data.size(0), data.size(1), -1, 96))
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
                 self.writer.add_scalar('loss', loss.item())

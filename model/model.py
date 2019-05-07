@@ -72,11 +72,11 @@ class Model(BaseModel):
         # for _ in range(k+1)])	
         
         self.encoders = nn.ModuleList([
-            nn.GRU(input_size, hidden_size)
+            nn.GRU(input_size, hidden_size, batch_first=True)
         for _ in range(k+1)])
 
         self.projections = nn.ModuleList([
-            nn.Linear(hidden_size, latent_size)
+            nn.Linear(hidden_size, 2*latent_size)
         for _ in range(k+1)])
 
         self.decoders = nn.ModuleList([
@@ -98,13 +98,13 @@ class Model(BaseModel):
         #         out[i], h[i] = self.encoders[i](splits[i][:,t,:], h[i])
 
         # reverse along time dimension
-        rev_idx = torch.arange(x.size(1), 0, -1) - 1
+        rev_idx = torch.arange(x.size(1), 0, -1).to(x.device) - 1
         rev_x = torch.index_select(x, 1, rev_idx)
         splits = torch.chunk(rev_x, self.k+1, dim=2)
         out = [None]*(self.k + 1)
         for i in range(self.k + 1):
             _, temp = self.encoders[i](splits[i])
-            out[i] = self.projections[i](temp[-1, ...]) # pick hidden state of last layer
+            out[i] = self.projections[i](temp[:,-1, ...]) # pick hidden state of last layer
 
         z0 = []
         mean = []
@@ -127,14 +127,15 @@ class Model(BaseModel):
         # pred_logvar = torch.log(sum([torch.exp(x[..., input_size:]) for x in pred_x_splits]))
 
         # return all parameters instead of combining them into two
+        input_size = pred_x_splits[0].size(2) // 2
         pred_means = [x[..., :input_size] for x in pred_x_splits]
         pred_logvars = [x[..., input_size:] for x in pred_x_splits]
 
         output = {
             'z0_means' : mean,
             'z0_logvars': logvar,
-            'pred_means' : pred_mean,
-            'pred_logvars' : pred_logvar
+            'pred_means' : pred_means,
+            'pred_logvars' : pred_logvars
         }
         return output
 

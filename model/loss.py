@@ -47,7 +47,7 @@ def latent_ode_loss(output, target):
 def latent_ode_loss_split(output, target):
     means, logvars = output['z0_means'], output['z0_logvars']
     kl_loss = 0.0
-    normal_mean = normal_logvar = torch.zeros(means[0].shape)
+    normal_mean = normal_logvar = torch.zeros(means[0].shape).to(means[0].device)
     for mean, logvar in zip(means, logvars):
         kl_loss += normal_kl(mean, logvar, normal_mean, normal_logvar)
 
